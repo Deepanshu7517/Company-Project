@@ -1,0 +1,14 @@
+.dashboard {
+  padding: 24px;
+  background-color: #f9fafb; /* light gray */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.error {
+  color: #dc2626; /* red-600 */
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
