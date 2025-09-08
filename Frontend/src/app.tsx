@@ -5,16 +5,12 @@ import SignIn from "./pages/signIn";
 import Dashboard from "./pages/dashboard";
 import ErrorElement from "./pages/errorElement";
 import Footer from "./components/footer";
-import ProtectedRoute from "./components/ProtectedRoute";
-
 export const App = () => {
   const routes = createBrowserRouter([
     {
       path: "/",
       element: (
-        <ProtectedRoute>
           <Dashboard />
-        </ProtectedRoute>
       ),
       errorElement: <ErrorElement goTo="/" />,
     },

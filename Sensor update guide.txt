@@ -1,0 +1,13 @@
+Open the sql server with this -                        /opt/mssql-tools/bin/sqlcmd -S localhost,1433 -U SA -P 'Deepu123@'
+choose from the database from this -                   SELECT name FROM sys.databases;
+                                                       GO
+Use your prefered database by using -                  USE MyDB
+                                                       GO
+Now select the query to see the list of the sensor -   SELECT * FROM dbo.HeaderSensors
+                                                       GO
+Updating an Table value in the database -              UPDATE dbo.HeaderSensors
+                                                       SET Measurement = 700.0, Unit = 'psi'
+                                                       WHERE Id = 1;
+                                                       GO
+View the changes after update -                        SELECT * FROM dbo.HeaderSensors
+                                                       GO
