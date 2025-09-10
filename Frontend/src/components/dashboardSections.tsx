@@ -1,6 +1,6 @@
 import SensorCard from "../components/sensorCards";
 import { type SensorInfo } from "../types";
-import "../css/dashboardSections.css"; // import css file
+import "../css/global.css"; // import css file
 
 interface Props {
   heading: string;

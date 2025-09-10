@@ -1,4 +1,5 @@
 .sensor-card {
+  cursor: pointer;
   background-color: #fff;             /* bg-white */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow */
   border-radius: 0.75rem;             /* rounded-xl */

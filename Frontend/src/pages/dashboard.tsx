@@ -1,4 +1,4 @@
-import "../css/dashboard.css";
+import "../css/global.css";
 import { useState, useEffect } from "react";
 import DashboardSection from "../components/dashboardSections";
 import { database } from "../config/firebase";

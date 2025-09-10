@@ -1,5 +1,5 @@
 import { type SensorInfo } from "../types";
-import "../css/sensordCards.css";
+import "../css/global.css";
 
 export default function SensorCard({ sensor, measurement, unit }: SensorInfo) {
   let borderClass = "border-green"; // default

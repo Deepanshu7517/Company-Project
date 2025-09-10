@@ -1,16 +1,21 @@
-import './css/app.css'
+import "./css/global.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Navbar from "./components/navbar";
 import SignIn from "./pages/signIn";
 import Dashboard from "./pages/dashboard";
 import ErrorElement from "./pages/errorElement";
 import Footer from "./components/footer";
+import ProtectedRoute from './components/protectedRoute'
+import useInactivityLogout  from './components/useInactivityLogout'
 export const App = () => {
+  useInactivityLogout();
   const routes = createBrowserRouter([
     {
       path: "/",
       element: (
+        <ProtectedRoute>
           <Dashboard />
+        </ProtectedRoute>
       ),
       errorElement: <ErrorElement goTo="/" />,
     },

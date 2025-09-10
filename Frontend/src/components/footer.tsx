@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import "../css/footer.css";
+import "../css/global.css";
 
 const Footer = () => {
   const formatDate = (date: Date) => {
