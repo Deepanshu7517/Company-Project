@@ -1,7 +1,6 @@
 const express = require("express");
 const sql = require("mssql");
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const firestore = require("./firebase");
 
@@ -10,8 +9,6 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-const JWT_SECRET = process.env.JWT_SECRET;
 
 // 🔧 MS SQL Server config
 const config = {
@@ -26,87 +23,112 @@ const config = {
   },
 };
 
-// 🔑 Auth middleware
-// const authenticateToken = (req, res, next) => {
-//   const authHeader = req.headers["authorization"];
-//   const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
-//   if (!token)
-//     return res.status(401).json({ message: "Authentication token missing" });
+// 🔄 Transform function
+function transformSensorData(rawData) {
+  const transformedData = [];
+  const sensorMapping = {
+    // Header
+    "Well 1 Pressure": { category: "Header", unit: "psi" },
+    "Well 2 Pressure": { category: "Header", unit: "psi" },
+    "Well 3 Pressure": { category: "Header", unit: "psi" },
+    "Well 4 Pressure": { category: "Header", unit: "psi" },
+    "Flare Header Pressure": { category: "Header", unit: "psi" },
+    "Production Header Pressure": { category: "Header", unit: "psi" },
+    "Test Header Pressure": { category: "Header", unit: "psi" },
+    "Production Heder Temp.": { category: "Header", unit: "°C" },
+    "Test Heder Temp.": { category: "Header", unit: "°C" },
+    "Manifold Flare Header DPT": { category: "Header", unit: "psi" },
 
-//   jwt.verify(token, JWT_SECRET, (err, user) => {
-//     if (err) return res.status(403).json({ message: "Invalid token" });
-//     req.user = user;
-//     next();
-//   });
-// };
+    // Test Separator
+    "PS Inlet Pressure": { category: "Test Separator", unit: "psi" },
+    "PS Vessel Pressure": { category: "Test Separator", unit: "psi" },
+    "TS Inlet Pressure": { category: "Test Separator", unit: "psi" },
+    "TS Vessel Pressure": { category: "Test Separator", unit: "psi" },
+    "TS Gas Outlet Pressure": { category: "Test Separator", unit: "psi" },
+    "Condesate Vessel Pressure": { category: "Test Separator", unit: "psi" },
+    "Effluent Vessel Pressure": { category: "Test Separator", unit: "psi" },
+    "Gas Scrubber Vessel Pressure": { category: "Test Separator", unit: "psi" },
+    "TS Gas Outlet DPT": { category: "Test Separator", unit: "psi" },
+    "TS Condensate Outlet PDM": { category: "Test Separator", unit: "psi" },
+    "TS Effluent Outlet TFM": { category: "Test Separator", unit: "psi" },
+    "PS Inlet Temp.": { category: "Test Separator", unit: "°C" },
+    "PS Vessel Temp.": { category: "Test Separator", unit: "°C" },
+    "TS Inlet Temp.": { category: "Test Separator", unit: "°C" },
+    "TS Vessel Temp.": { category: "Test Separator", unit: "°C" },
+    "TS Gas Outlet Temp.": { category: "Test Separator", unit: "°C" },
+    "TS Condensate Outlet Temp.": { category: "Test Separator", unit: "°C" },
+    "Condensate Stabilizer Outline Temp.": {
+      category: "Test Separator",
+      unit: "°C",
+    },
+    "Effluent Vessel Temp.": { category: "Test Separator", unit: "°C" },
+    "Gas Scrubber Vessel Temp.": { category: "Test Separator", unit: "°C" },
 
-// // ✅ Verify token & return all users
-// app.get("/users", authenticateToken, async (req, res) => {
-//   try {
-//     let pool = await sql.connect(config);
-//     let result = await pool.request().query("SELECT * FROM Users");
-//     res.json(result.recordset);
-//   } catch (err) {
-//     console.error("Error: ", err);
-//     res.status(500).send("Server Error");
-//   }
-// });
+    // RTDs
+    "RTD-13": { category: "Misc", unit: "°C" },
+    "RTD-14": { category: "Misc", unit: "°C" },
+    "RTD-15": { category: "Misc", unit: "°C" },
+    "RTD-16": { category: "Misc", unit: "°C" },
 
-// // ✅ Login
-// app.post("/api/login", async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-//     let pool = await sql.connect(config);
+    // Metering Skid
+    "Metering Skid Line 1 DPT": { category: "Metering Skid", unit: "psi" },
+    "Metering Skid Line 2 DPT": { category: "Metering Skid", unit: "psi" },
+    "Condesate Outline PDM": { category: "Metering Skid", unit: "psi" },
+  };
 
-//     let result = await pool
-//       .request()
-//       .input("email", sql.VarChar, email)
-//       .query("SELECT * FROM Users WHERE Email = @email");
+  for (const key in rawData) {
+    if (key === "Batch_Date" || key === "Batch_Time") continue;
 
-//     const user = result.recordset[0];
-//     if (!user || user.Password !== password) {
-//       return res.status(401).json({ message: "Invalid email or password" });
-//     }
+    const sensorInfo = sensorMapping[key];
+    if (sensorInfo) {
+      transformedData.push({
+        Category: sensorInfo.category,
+        Sensor: key,
+        Measurement: rawData[key],
+        Unit: sensorInfo.unit,
+      });
+    }
+  }
 
-//     const token = jwt.sign({ id: user.UserID, email: user.Email }, JWT_SECRET, {
-//       expiresIn: "30m",
-//     });
+  return transformedData;
+}
 
-//     res.status(200).json({ token, message: "Login successful" });
-//   } catch (err) {
-//     console.error("Error during login: ", err);
-//     res.status(500).send("Server Error");
-//   }
-// });
-
-// 🔄 Random SQL update query
-// const randUpdateSql = `
-//   UPDATE dbo.HeaderSensors
-//     SET Measurement = ABS(CHECKSUM(NEWID())) % 1700;
-//   UPDATE dbo.SeparatorSensors
-//     SET Measurement = ABS(CHECKSUM(NEWID())) % 1700;
-// `;
-
+// 🔄 Sync loop
 setInterval(async () => {
   try {
     let pool = await sql.connect(config);
 
-    // Fetch all sensors from the combined table
-    const result = await pool.request().query("SELECT * FROM dbo.AllSensors");
+    // ✅ Step 1: Get the latest updated row directly
+    const latestRowResult = await pool.request().query(`
+      SELECT TOP 1 *
+      FROM dbo.customerData
+      ORDER BY 
+        CAST(Batch_Date AS DATETIME) + CAST(Batch_Time AS DATETIME) DESC
+    `);
 
+    if (latestRowResult.recordset.length === 0) {
+      console.log("⚠️ No data found in customerData.");
+      return;
+    }
+
+    const latestRow = latestRowResult.recordset[0];
+
+    // ✅ Step 2: Transform
+    const transformedData = transformSensorData(latestRow);
+
+    // ✅ Step 3: Wrap into same structure as before
     const combinedData = {
-      sensors: result.recordset, // all sensors in one array
+      sensors: transformedData,
       updatedAt: new Date().toISOString(),
     };
-    console.log(combinedData.sensors);
     const singleString = JSON.stringify(combinedData);
 
+    // ✅ Step 4: Push to Firestore
     const mainDoc = firestore.collection("sensors").doc("latestData");
     await mainDoc.set({ data: singleString }, { merge: true });
 
     console.log(
-      "🔥 Synced SQL → Firestore as SINGLE STRING at",
-      new Date().toLocaleTimeString()
+      `🔥 Synced latest row → Firestore at ${new Date().toLocaleTimeString()}`
     );
   } catch (err) {
     console.error("❌ Error syncing:", err);
@@ -117,5 +139,3 @@ setInterval(async () => {
 app.listen(5000, () => {
   console.log("🚀 Server running on http://localhost:5000");
 });
-
-// e4fe18cf4725

@@ -21,27 +21,27 @@ function decodeSensors(value: unknown): SensorInfo[] {
   }));
 }
 
-const getCardStatus = (measurement: number, unit: string) => {
-  if (unit === "psi") {
-    if (measurement < 100)
-      return { indicatorColor: "red", message: "Warning: Pressure is too low" };
-    if (measurement < 600)
-      return { indicatorColor: "yellow", message: "Warning: Pressure is little low" };
-    if (measurement > 2000)
-      return { indicatorColor: "red", message: "Warning: Pressure is too high" };
-    return { indicatorColor: "green", message: null };
-  }
+// const getCardStatus = (measurement: number, unit: string) => {
+//   if (unit === "psi") {
+//     if (measurement < 100)
+//       return { indicatorColor: "red", message: "Warning: Pressure is too low" };
+//     if (measurement < 600)
+//       return { indicatorColor: "yellow", message: "Warning: Pressure is little low" };
+//     if (measurement > 2000)
+//       return { indicatorColor: "red", message: "Warning: Pressure is too high" };
+//     return { indicatorColor: "green", message: null };
+//   }
 
-  if (unit === "°C") {
-    if (measurement < 500)
-      return { indicatorColor: "yellow", message: "Warning: Temperature is little low" };
-    if (measurement > 1500)
-      return { indicatorColor: "red", message: "Warning: Temperature is too high" };
-    return { indicatorColor: "green", message: null };
-  }
+//   if (unit === "°C") {
+//     if (measurement < 500)
+//       return { indicatorColor: "yellow", message: "Warning: Temperature is little low" };
+//     if (measurement > 1500)
+//       return { indicatorColor: "red", message: "Warning: Temperature is too high" };
+//     return { indicatorColor: "green", message: null };
+//   }
 
-  return { indicatorColor: "gray", message: null };
-};
+//   return { indicatorColor: "gray", message: null };
+// };
 
 const Dashboard: React.FC = () => {
   const [groupedSensors, setGroupedSensors] = useState<
@@ -103,19 +103,19 @@ const Dashboard: React.FC = () => {
       <h2 className="section-heading">{heading}</h2>
       <div className="section-content">
         {sensors.map((sensor, index) => {
-          const { indicatorColor, message } = getCardStatus(
-            sensor.measurement,
-            sensor.unit
-          );
+          // const { indicatorColor, message } = getCardStatus(
+          //   sensor.measurement,
+          //   sensor.unit
+          // );
           return (
             <div key={index} className="sensor-card">
-              <div className={`indicator ${indicatorColor}`} />
+              {/* <div className={`indicator ${indicatorColor}`} /> */}
               <p className="sensor-name">{sensor.sensor}</p>
               <div className="measurement">
-                <span className="value">{sensor.measurement}</span>
+                <span className="value">{(sensor.measurement).toFixed(2)}</span>
                 <span className="unit">{sensor.unit}</span>
               </div>
-              {message && (
+              {/* {message && (
                 <div className="warning">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -131,7 +131,7 @@ const Dashboard: React.FC = () => {
                   </svg>
                   {message}
                 </div>
-              )}
+              )} */}
             </div>
           );
         })}
