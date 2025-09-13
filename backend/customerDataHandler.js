@@ -1,20 +1,29 @@
 const express = require("express");
 const sql = require("mssql");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const firestore = require("./firebase");
+
+dotenv.config();
 
 const app = express();
-const port = 3000;
+app.use(cors());
+app.use(express.json());
 
+// 🔧 MS SQL Server config
 const config = {
-  user: "SA",
-  password: "Deepu123@",
-  server: "localhost",
-  database: "MyDB",
-  port: 1433,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  server: process.env.DB_SERVER,
+  database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT),
   options: {
     encrypt: false,
+    trustServerCertificate: true,
   },
 };
 
+// 🔄 Transform function
 function transformSensorData(rawData) {
   const transformedData = [];
   const sensorMapping = {
@@ -48,7 +57,10 @@ function transformSensorData(rawData) {
     "TS Vessel Temp.": { category: "Test Separator", unit: "°C" },
     "TS Gas Outlet Temp.": { category: "Test Separator", unit: "°C" },
     "TS Condensate Outlet Temp.": { category: "Test Separator", unit: "°C" },
-    "Condensate Stabilizer Outline Temp.": { category: "Test Separator", unit: "°C" },
+    "Condensate Stabilizer Outline Temp.": {
+      category: "Test Separator",
+      unit: "°C",
+    },
     "Effluent Vessel Temp.": { category: "Test Separator", unit: "°C" },
     "Gas Scrubber Vessel Temp.": { category: "Test Separator", unit: "°C" },
 
@@ -81,74 +93,49 @@ function transformSensorData(rawData) {
   return transformedData;
 }
 
+// 🔄 Sync loop
 setInterval(async () => {
   try {
     let pool = await sql.connect(config);
 
-    // Step 1: Get latest batch date + time
-    const latestBatch = await pool.request().query(`
-      SELECT TOP 1 Batch_Date, Batch_Time
+    // ✅ Step 1: Get the latest updated row directly
+    const latestRowResult = await pool.request().query(`
+      SELECT TOP 1 *
       FROM dbo.customerData
-      ORDER BY Batch_Date DESC, Batch_Time DESC
+      ORDER BY 
+        CAST(Batch_Date AS DATETIME) + CAST(Batch_Time AS DATETIME) DESC
     `);
 
-    if (latestBatch.recordset.length === 0) {
+    if (latestRowResult.recordset.length === 0) {
       console.log("⚠️ No data found in customerData.");
       return;
     }
 
-    const { Batch_Date, Batch_Time } = latestBatch.recordset[0];
+    const latestRow = latestRowResult.recordset[0];
 
-    // Step 2: Get all rows for that batch
-    const batchRows = await pool.request()
-      .input("Batch_Date", sql.Date, Batch_Date)
-      .input("Batch_Time", sql.Time, Batch_Time)
-      .query(`
-        SELECT * 
-        FROM dbo.customerData
-        WHERE Batch_Date = @Batch_Date AND Batch_Time = @Batch_Time
-      `);
-
-    // Step 3: Merge all rows into one object
-    const latestRow = {};
-    batchRows.recordset.forEach(row => {
-      Object.keys(row).forEach(col => {
-        if (row[col] !== null && col !== "Batch_Date" && col !== "Batch_Time") {
-          latestRow[col] = row[col];
-        }
-      });
-    });
-
-    // Step 4: Transform into sensor format
+    // ✅ Step 2: Transform
     const transformedData = transformSensorData(latestRow);
 
-    // Step 5: Upsert into AllSensors
-    for (const sensor of transformedData) {
-      await pool.request()
-        .input("Category", sql.NVarChar, sensor.Category)
-        .input("Sensor", sql.NVarChar, sensor.Sensor)
-        .input("Measurement", sql.Float, sensor.Measurement)
-        .input("Unit", sql.NVarChar, sensor.Unit)
-        .query(`
-          MERGE dbo.AllSensors AS target
-          USING (SELECT @Sensor AS Sensor) AS source
-          ON target.Sensor = source.Sensor
-          WHEN MATCHED THEN
-            UPDATE SET Measurement = @Measurement
-          WHEN NOT MATCHED THEN
-            INSERT (Category, Sensor, Measurement, Unit)
-            VALUES (@Category, @Sensor, @Measurement, @Unit);
-        `);
-    }
+    // ✅ Step 3: Wrap into same structure as before
+    const combinedData = {
+      sensors: transformedData,
+      updatedAt: new Date().toISOString(),
+    };
+    const singleString = JSON.stringify(combinedData);
 
-    console.log(`✅ Synced AllSensors with latest batch (${Batch_Date} ${Batch_Time})`);
+    // ✅ Step 4: Push to Firestore
+    const mainDoc = firestore.collection("sensors").doc("latestData");
+    await mainDoc.set({ data: singleString }, { merge: true });
+
+    console.log(
+      `🔥 Synced latest row → Firestore at ${new Date().toLocaleTimeString()}`
+    );
   } catch (err) {
     console.error("❌ Error syncing:", err);
   }
 }, 10000);
 
-
-
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+// 🚀 Start server
+app.listen(5000, () => {
+  console.log("🚀 Server running on http://localhost:5000");
 });
