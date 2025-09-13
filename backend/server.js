@@ -87,7 +87,6 @@ const config = {
 //     SET Measurement = ABS(CHECKSUM(NEWID())) % 1700;
 // `;
 
-
 setInterval(async () => {
   try {
     let pool = await sql.connect(config);
@@ -99,7 +98,7 @@ setInterval(async () => {
       sensors: result.recordset, // all sensors in one array
       updatedAt: new Date().toISOString(),
     };
-
+    console.log(combinedData.sensors);
     const singleString = JSON.stringify(combinedData);
 
     const mainDoc = firestore.collection("sensors").doc("latestData");

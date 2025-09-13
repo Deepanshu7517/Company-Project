@@ -1,8 +1,12 @@
 import { useState, useEffect } from "preact/hooks";
-import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+} from "firebase/auth";
 import { auth } from "../config/firebase";
-import "../css/global.css";
 import { useNavigate } from "react-router-dom";
+import "../css/global.css"; // ✅ Reuse the modern CSS UI we made
 
 const SignIn = () => {
   const [loading, setLoading] = useState(false);
@@ -24,13 +28,13 @@ const SignIn = () => {
     setLoading(true);
 
     try {
-      // ⏩ Set session persistence to LOCAL
+      // Set session persistence to LOCAL
       await setPersistence(auth, browserLocalPersistence);
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/", { replace: true });
     } catch (firebaseError: any) {
       console.error("Firebase Login Error:", firebaseError);
-      
+
       switch (firebaseError.code) {
         case "auth/user-not-found":
           setLoginError("No user found with this email.");
@@ -45,7 +49,9 @@ const SignIn = () => {
           setLoginError("Invalid email or password. Please try again.");
           break;
         case "auth/too-many-requests":
-          setLoginError("Access to this account has been temporarily disabled due to many failed login attempts.");
+          setLoginError(
+            "Access to this account has been temporarily disabled due to many failed login attempts."
+          );
           break;
         default:
           setLoginError("An unexpected error occurred. Please try again.");
@@ -57,33 +63,60 @@ const SignIn = () => {
   };
 
   return (
-    <div>
-      <div className={`error-toast ${loginError ? "show" : ""}`}>
-        <p>{loginError}</p>
-        <button onClick={() => setLoginError("")}>&times;</button>
-      </div>
+    <div className="login-container">
+      {/* ✅ Error Toast */}
+      {loginError && (
+        <div className="error-toast show">
+          <p>{loginError}</p>
+          <button onClick={() => setLoginError("")}>&times;</button>
+        </div>
+      )}
 
-      <div className="signIn">
-        <h1>Login</h1>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            placeholder="Enter email"
-            value={email}
-            onChange={(e: any) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Enter password"
-            value={password}
-            onChange={(e: any) => setPassword(e.target.value)}
-            required
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
+      <div className="login-card">
+        {/* Left Side */}
+        <div className="login-left">
+          <h1>IoTelligence</h1>
+          <p>An IOT Data management company</p>
+        </div>
+
+        {/* Right Side */}
+        <div className="login-right">
+          <h2>Hello Again!</h2>
+          <p>Welcome Back</p>
+
+          <form onSubmit={handleSubmit} className="login-form">
+            {/* Email Input */}
+            <div className="form-group">
+              <label htmlFor="email">Email address</label>
+              <input
+                type="email"
+                id="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e: any) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Password Input */}
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e: any) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Login Button */}
+            <button type="submit" className="login-btn" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

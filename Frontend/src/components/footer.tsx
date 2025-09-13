@@ -39,8 +39,8 @@ const Footer = () => {
 
       {/* Right side */}
       <div className="footer-right">
-        <span>{date}</span>
-        <span>{time}</span>
+        <div>{date}</div>
+        <div>{time}</div>
       </div>
     </footer>
   );

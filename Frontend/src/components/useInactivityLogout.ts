@@ -2,7 +2,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { auth } from "../config/firebase";
 
-const INACTIVITY_TIMEOUT_MS = 3000  * 1000; // 1 minute
+const INACTIVITY_TIMEOUT_MS = 3000 * 1000; // 1 minute
 
 const useInactivityLogout = () => {
   // Use ReturnType<typeof setTimeout> for better TS safety
