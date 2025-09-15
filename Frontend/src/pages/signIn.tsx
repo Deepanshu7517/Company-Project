@@ -6,6 +6,9 @@ import {
 } from "firebase/auth";
 import { auth } from "../config/firebase";
 import { useNavigate } from "react-router-dom";
+import close from "../assets/close.svg";
+import ongcLogo from "../assets/ONGC-Logo.png";
+import assamAirLogo from "../assets/assamAirProductsLogo.png";
 import "../css/global.css"; // ✅ Reuse the modern CSS UI we made
 
 const SignIn = () => {
@@ -17,66 +20,84 @@ const SignIn = () => {
 
   useEffect(() => {
     if (loginError) {
-      const timer = setTimeout(() => setLoginError(""), 3000);
+      const timer = setTimeout(() => setLoginError(""), 5000);
       return () => clearTimeout(timer);
     }
   }, [loginError]);
 
-  const handleSubmit = async (e: Event) => {
+  const getFirebaseErrorMessage = (code: string): string => {
+    const errorMap: Record<string, string> = {
+      "auth/user-not-found": "No user found with this email.",
+      "auth/wrong-password": "Incorrect password. Please try again.",
+      "auth/invalid-email": "Please enter a valid email address.",
+      "auth/invalid-credential": "Invalid email or password. Please try again.",
+      "auth/too-many-requests":
+      "Access to this account has been temporarily disabled due to many failed login attempts.",
+    };
+    return errorMap[code] || "An unexpected error occurred. Please try again.";
+  };
+  
+  // ✅ Form submission handler
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Reset UI states
     setLoginError("");
     setLoading(true);
-
     try {
-      // Set session persistence to LOCAL
-      await setPersistence(auth, browserLocalPersistence);
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate("/", { replace: true });
-    } catch (firebaseError: any) {
-      console.error("Firebase Login Error:", firebaseError);
+      // Config variables
+      const persistenceMode = browserLocalPersistence;
+      const userEmail = email.trim();
+      const userPassword = password;
 
-      switch (firebaseError.code) {
-        case "auth/user-not-found":
-          setLoginError("No user found with this email.");
-          break;
-        case "auth/wrong-password":
-          setLoginError("Incorrect password. Please try again.");
-          break;
-        case "auth/invalid-email":
-          setLoginError("Please enter a valid email address.");
-          break;
-        case "auth/invalid-credential":
-          setLoginError("Invalid email or password. Please try again.");
-          break;
-        case "auth/too-many-requests":
-          setLoginError(
-            "Access to this account has been temporarily disabled due to many failed login attempts."
-          );
-          break;
-        default:
-          setLoginError("An unexpected error occurred. Please try again.");
-          break;
-      }
+      // Set persistence
+      await setPersistence(auth, persistenceMode);
+
+      // Login attempt
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        userEmail,
+        userPassword
+      );
+
+      const { user } = userCredential;
+      console.log("✅ User logged in:", user.uid, user.email);
+
+      // Redirect after success
+      navigate("/", { replace: true });
+    } catch (error: any) {
+      console.error("❌ Firebase Login Error:", error);
+      const errorCode = error.code as string;
+      setLoginError(getFirebaseErrorMessage(errorCode));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-container">
+    <div className="login-container" id={"login-container"}>
       {/* ✅ Error Toast */}
       {loginError && (
-        <div className="error-toast show">
-          <p>{loginError}</p>
-          <button onClick={() => setLoginError("")}>&times;</button>
+        <div className="login-error-container">
+          <p className="login-error-text">{loginError}</p>
+          <button
+            onClick={() => setLoginError("")}
+            className="login-close-button"
+          >
+            <img src={close} alt="close" />
+          </button>
         </div>
       )}
 
       <div className="login-card">
         {/* Left Side */}
         <div className="login-left">
-          <h1>IoTelligence</h1>
-          <p>An IOT Data management company</p>
+          <div className="login-logos-container">
+            <img src={ongcLogo} id={'ongcLogo'} className={'ongcLogo'} alt="" />
+            <img src={assamAirLogo} id={'assamAirLogo'} className={'assamAirLogo'} alt="" />
+
+          </div>
+          {/* <p>An IOT Data management company</p> */}
         </div>
 
         {/* Right Side */}
@@ -112,7 +133,12 @@ const SignIn = () => {
             </div>
 
             {/* Login Button */}
-            <button type="submit" className="login-btn" disabled={loading}>
+            <button
+              type="submit"
+              className="login-btn"
+              id={`login-btn`}
+              disabled={loading}
+            >
               {loading ? "Logging in..." : "Login"}
             </button>
           </form>

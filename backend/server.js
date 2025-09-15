@@ -65,8 +65,8 @@ function transformSensorData(rawData) {
     "Gas Scrubber Vessel Temp.": { category: "Test Separator", unit: "°C" },
 
     // RTDs
-    "RTD-13": { category: "Misc", unit: "°C" },
-    "RTD-14": { category: "Misc", unit: "°C" },
+    "RTD-13": { category: "Metering Skid", unit: "°C" },
+    "RTD-14": { category: "Metering Skid", unit: "°C" },
     "RTD-15": { category: "Misc", unit: "°C" },
     "RTD-16": { category: "Misc", unit: "°C" },
 
@@ -133,7 +133,7 @@ setInterval(async () => {
   } catch (err) {
     console.error("❌ Error syncing:", err);
   }
-}, 10000);
+}, 60000);
 
 // 🚀 Start server
 app.listen(5000, () => {

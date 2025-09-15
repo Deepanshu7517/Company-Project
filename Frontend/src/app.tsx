@@ -7,7 +7,7 @@ import Dashboard from "./pages/dashboard";
 import ErrorElement from "./pages/errorElement";
 import Footer from "./components/footer";
 import ProtectedRoute from './components/protectedRoute';
-import useInactivityLogout from './components/useInactivityLogout';
+import useInactivityLogout from './utils/useInactivityLogout';
 
 const Layout = () => {
   return (
